@@ -38,6 +38,8 @@ typedef struct addl_config {
     uint8_t cw_volume;      // output 'volume' (PWM duty cycle) for CW messages. 
       //  0..100 [%] for fixed volume, or BEEP_VOLUME_AUTO to control via pot:
 #     define BEEP_VOLUME_AUTO 255
+    uint8_t aprs_enabled;   // APRS Beacon function state. See aprs.c .
+    uint8_t aprs_period;    // APRS messages transmission period in minutes.
     uint8_t cw_speed_WPM;   // CW output speed,  measured in words per minute .
     uint16_t fg_color;      // foreground (text) colour for own menus, and maybe console screens too
     uint16_t bg_color;      // normal background colour, also customizeable in app_menu.c ...

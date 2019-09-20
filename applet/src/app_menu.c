@@ -55,6 +55,7 @@
 #include "console.h"      // text screen buffer for Netmon (may be displayed through the 'app menu', too)
 #include "irq_handlers.h" // backlight PWM, timers, Morse generator
 #include "narrator.h"     // announces channel, zone, and maybe current menu selection in Morse code
+#include "aprs.h"         // APRS beacon function, sends GPS position to the APRS network
 #include "lcd_driver.h"   // alternative LCD driver (DL4YHF), doesn't depend on 'gfx'
 #include "app_menu.h"     // 'simple' alternative menu activated by red BACK-button
 #include "amenu_codeplug.h" // codeplug-related displays, e.g. zone list, etc
@@ -110,10 +111,12 @@ BOOL Menu_CheckLongKeypressToActivateMorse(app_menu_t *pMenu);
 // Callback function prototypes and forward references for a few menu items :
 int am_cbk_ColorTest(app_menu_t *pMenu, menu_item_t *pItem, int event, int param );
 int am_cbk_NetMon(app_menu_t *pMenu, menu_item_t *pItem, int event, int param );
+int am_cbk_Aprs(app_menu_t *pMenu, menu_item_t *pItem, int event, int param );
 const menu_item_t am_Setup[]; // referenced from main menu
 const am_stringtable_t am_stringtab_opmode2[]; // for gui_opmode2
 const am_stringtable_t am_stringtab_255Auto[];
 const am_stringtable_t am_stringtab_narrator_modes[];
+const am_stringtable_t am_stringtab_aprs_enabled[];
 const am_stringtable_t am_stringtab_color_names[];
 
 //---------------------------------------------------------------------------
@@ -240,6 +243,17 @@ const menu_item_t am_Setup[] = // setup menu, nesting level 1 ...
 #endif
   { "Colour test",      DTYPE_NONE, APPMENU_OPT_NONE,0, 
         NULL,0,0,                  NULL, am_cbk_ColorTest },
+
+  // { "Text__max__13", data_type,  options,opt_value,
+  //    pvValue,iMinValue,iMaxValue,           string table, callback }
+  { "[5 APRS Beacon]Enabled", DTYPE_UNS8,
+        APPMENU_OPT_EDITABLE|APPMENU_OPT_BITMASK,
+            APRS_OFF|APRS_ENABLED, // <- here: bitmask !
+        &global_addl_config.aprs_enabled,0,1, am_stringtab_aprs_enabled,NULL },  
+  { "Period/min",        DTYPE_UNS8, 
+        APPMENU_OPT_EDITABLE|APPMENU_OPT_IMM_UPDATE|APPMENU_OPT_FACTOR,5, 
+        &global_addl_config.aprs_period,5,60,      NULL,NULL },  
+
   { "Setup:Back",       DTYPE_NONE, APPMENU_OPT_BACK,0,
         NULL,0,0,                  NULL,         NULL     },
 
@@ -284,6 +298,15 @@ const am_stringtable_t am_stringtab_narrator_modes[] =
 { { NARRATOR_MODE_OFF,     "off"     },
   { NARRATOR_MODE_ENABLED, "enabled" }, 
   { NARRATOR_MODE_ENABLED|NARRATOR_MODE_VERBOSE, "verbose" },
+  // Note: If a menu item's parameter value is connected to
+  // a string table (like this), the only values that can be
+  // selected in the menu are those from the table - no integers.
+  { 0, NULL }
+};
+
+const am_stringtable_t am_stringtab_aprs_enabled[] = 
+{ { APRS_OFF,     "off"     },
+  { APRS_ENABLED, "on" }, 
   // Note: If a menu item's parameter value is connected to
   // a string table (like this), the only values that can be
   // selected in the menu are those from the table - no integers.
